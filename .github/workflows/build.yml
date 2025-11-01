@@ -1,35 +1,50 @@
-name: Build Android APK
+name: Build APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build with Buildozer
-      uses: ArtemSBulgakov/buildozer-action@v1
-      id: buildozer
+    - uses: actions/setup-python@v4
       with:
-        command: buildozer android debug
-        buildozer_version: stable
+        python-version: '3.10'
+
+    - uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -qq -y build-essential libffi-dev libssl-dev
+
+    - name: Install buildozer
+      run: pip install buildozer cython==0.29.33
+
+    - name: Build APK
+      run: buildozer android debug
 
     - name: Upload APK
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: apk
-        path: ${{ steps.buildozer.outputs.filename }}
+        path: bin/*.apk
 
-    - name: Create Release
+    - name: Release
       if: success()
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ steps.buildozer.outputs.filename }}
+        files: bin/*.apk
         tag_name: v${{ github.run_number }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
