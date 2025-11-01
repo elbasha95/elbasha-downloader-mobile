@@ -26,9 +26,6 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
     - name: Cache Buildozer directories
       uses: actions/cache@v3
       with:
@@ -56,65 +53,27 @@ jobs:
           libavformat-dev \
           libavcodec-dev \
           zlib1g-dev \
-          libgstreamer1.0 \
-          gstreamer1.0-plugins-base \
-          gstreamer1.0-plugins-good \
           libffi-dev \
           libssl-dev \
           automake \
           autoconf \
           libtool \
-          pkg-config \
-          cmake \
-          ninja-build \
           ccache \
-          libc6-dev-i386 \
-          lib32z1 \
-          lib32stdc++6
+          zip \
+          unzip \
+          openjdk-17-jdk
 
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade buildozer
         pip install --upgrade cython==0.29.33
-        pip install --upgrade wheel
-        pip install --upgrade setuptools
-
-    - name: Install Android SDK Components
-      run: |
-        yes | sdkmanager --licenses || true
-        sdkmanager --install "platform-tools"
-        sdkmanager --install "platforms;android-31"
-        sdkmanager --install "build-tools;31.0.0"
-        sdkmanager --install "ndk;25.2.9519653"
-        sdkmanager --install "cmdline-tools;latest"
-
-    - name: Set Android Environment Variables
-      run: |
-        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-        echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-        echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-        echo "$ANDROID_HOME/build-tools/31.0.0" >> $GITHUB_PATH
-
-    - name: Verify Android Setup
-      run: |
-        echo "ANDROID_HOME: $ANDROID_HOME"
-        echo "Java version:"
-        java -version
-        echo "Android SDK location:"
-        which sdkmanager
-        echo "Installed packages:"
-        sdkmanager --list_installed
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew || true
 
     - name: Build with Buildozer
       run: |
-        buildozer android debug
+        yes | buildozer android debug || buildozer android debug
       env:
-        ANDROID_HOME: ${{ env.ANDROID_HOME }}
+        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m"
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
@@ -138,15 +97,6 @@ jobs:
           - 🎬 تحميل الفيديوهات والصوتيات
           - 📥 دعم الروابط المباشرة
           - 🌐 دعم yt-dlp
-          
-          ### التثبيت:
-          1. نزل ملف APK
-          2. فعّل "تثبيت من مصادر غير معروفة"
-          3. ثبّت التطبيق
-          
-          ### الصلاحيات المطلوبة:
-          - الإنترنت
-          - الوصول للتخزين
           
           **تم البناء تلقائيًا عبر GitHub Actions** ✅
         draft: false
